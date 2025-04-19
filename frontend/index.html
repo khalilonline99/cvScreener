@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Screener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+
+        input,
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+        }
+
+        #output {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
+
+        #loading {
+            font-size: 16px;
+            color: blue;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Upload Resume</h2>
+    <div class="container">
+        <input type="file" id="fileInput">
+        <button id="uploadBtn">Upload</button>
+        <div id="loading">Processing...</div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        document.getElementById("uploadBtn").addEventListener("click", async function (event) {
+            event.preventDefault();
+            const fileInput = document.getElementById("fileInput");
+            const outputDiv = document.getElementById("output");
+            if (!fileInput.files.length) return alert("Please select a file!");
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            outputDiv.innerHTML = "<p>⏳ Processing... Please wait.</p>";
+
+            try {
+                const response = await fetch("http://localhost:5000/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+
+                const data = await response.json();
+                console.log("🟢 Response received:", data);
+                outputDiv.innerHTML = `<p><strong>Extracted Text:</strong></p>`;
+
+                data.extractedData.forEach((item) => {
+                    const para = document.createElement("p");
+                    para.innerHTML = `${item.text}`;
+                    outputDiv.appendChild(para);
+                });
+
+            } catch (error) {
+                console.error("🔴 Upload failed:", error);
+                outputDiv.innerHTML = `<p style="color:red;">Upload failed: ${error.message}</p>`;
+            }
+            finally {
+                document.getElementById("loading").style.display = "none";
+            }
+        });
+    </script>
+</body>
+
+</html>
