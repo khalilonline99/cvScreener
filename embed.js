@@ -18,7 +18,7 @@ async function getEmbedding(text) {
 function loadAndFilterText(filepath) {
   const file = fs.readFileSync(filepath, "utf-8");
   const json = JSON.parse(file);
-
+  
   const keywords = [
     "objective",
     "skills",
@@ -27,6 +27,7 @@ function loadAndFilterText(filepath) {
     "summary",
     "projects",
   ];
+  console.log("json parsed file:", json);
 
   const filtered = json.filter(item=> {
     const lower = item.text.toLowerCase();
@@ -40,7 +41,7 @@ function loadAndFilterText(filepath) {
   console.log("⏳ Processing CV...");
 
   const text = loadAndFilterText(jsonFilePath);
-  console.log("✅ Filtered Text:", text.slice(0, 300) + '...');
+  console.log("✅ Filtered Text:", text);
 
   const vector = await getEmbedding(text);
   console.log("📌 Embedding Vector (first 5):", vector.slice(0, 5));
