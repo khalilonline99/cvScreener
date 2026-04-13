@@ -3,3 +3,4 @@ qdrant_storage
 myenv
 uploads
 MinerU
+.env
