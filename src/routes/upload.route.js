@@ -1,55 +1,143 @@
-import { saveFile, ensureUploadDir } from "../utils/file.util.js";
-import { createEmbedding } from "../services/embedding.service.js";
-import { scoreCV } from "../services/scoring.service.js";
-import { insertCV, initCollection } from "../services/qdrant.service.js";
-import fs from "fs";
-import path from "path";
+import { LiteParse } from "@llamaindex/liteparse";
+import { extractCVData } from "../services/extract.service.js";
+import { getEmbedding } from "../services/embedding.service.js";
+import { client, COLLECTION_NAME } from "../services/qdrant.service.js";
+import { extractWithAI } from "../services/ai.service.js";
+
+// init parser
+const parser = new LiteParse({ ocrEnabled: true });
+
 
 export default async function uploadRoute(app) {
-  await initCollection();
-  ensureUploadDir();
-
   app.post("/upload", async (req, reply) => {
-    const file = await req.file();
+    try {
+      const file = await req.file();
 
-    const filePath = await saveFile(file);
+      if (!file) {
+        return reply.code(400).send({
+          error: "No file uploaded",
+        });
+      }
 
-    let text = "dummy cv text javascript react node";
+      // ---------------- STREAM → BUFFER ----------------
+      const chunks = [];
 
-    // optional MinerU output check
-    const base = path.parse(file.filename).name;
+      for await (const chunk of file.file) {
+        chunks.push(chunk);
+      }
 
-    const jsonPath = path.join(
-      process.cwd(),
-      "uploads",
-      base,
-      "auto",
-      `${base}_content_list.json`
-    );
+      const buffer = Buffer.concat(chunks);
 
-    if (fs.existsSync(jsonPath)) {
-      text = fs.readFileSync(jsonPath, "utf-8");
+      console.log("📦 Buffer size:", buffer.length);
+
+      // ---------------- PARSE DIRECTLY ----------------
+      let extractedText = "";
+
+      try {
+        const result = await parser.parse(buffer); // stream input
+
+        extractedText = result.text;
+
+        console.log("📦 Extracted Text un-organized, sent to AI");
+
+        // ----- we will use the ai for extraction and organize in json -------------
+        let aiData;
+
+        try {
+          aiData = await extractWithAI(extractedText);
+          console.log("🤖 AI Extracted Data:", aiData);
+
+          // ---------------- CREATE EMBEDDING TEXT ----------------
+          const embeddingText = `
+        ${aiData.skills?.join(", ")} professional 
+        with experience in ${aiData.experience?.map(e => e.role).join(", ")}.
+        Education: ${aiData.education?.map(e => e.degree).join(", ")}.
+        `;
+
+
+          // ---------------- GENERATE VECTOR ----------------
+          const vector = await getEmbedding(embeddingText);
+
+          // Save in the quadrant
+          await client.upsert(COLLECTION_NAME, {
+            wait: true,
+            points: [
+              {
+                id: Date.now(), // simple unique id
+                vector: vector,
+                payload: {
+                  name: aiData.name,
+                  email: aiData.email,
+                  phone: aiData.phone,
+                  skills: aiData.skills,
+                  experience_years: aiData.experience_years,
+                  education: aiData.education,
+                },
+              },
+            ],
+          });
+          console.log("Upserted the data");
+
+          // ---------------- RESPONSE TO FRONTEND ----------------
+          return reply.send({
+            message: "CV parsed with AI",
+            data: aiData,
+            // data: extractedText,
+            // fullText: extractedText
+            // preview: extractedText.slice(0, 1000),
+          });
+          console.log("Sent to Frontend also");
+
+        } catch (err) {
+          return reply.code(500).send({
+            error: "AI extraction failed",
+            details: err.message,
+          });
+        }
+
+        // Run once to create the collection for the first time
+        // await client.createCollection("cvs", {
+        //   vectors: {
+        //     size: 384, // important for MiniLM
+        //     distance: "Cosine",
+        //   },
+        // });
+
+
+        if (!extractedText || extractedText.trim().length === 0) {
+          return reply.code(400).send({
+            error: "No readable text found",
+            message: "There are some issues in the CV/resume",
+          });
+        }
+
+      } catch (parseError) {
+        app.log.error(parseError);
+        return reply.code(500).send({
+          error: "Parsing failed",
+          message: "There are some issues in the CV/resume",
+          details: parseError.message,
+        });
+      }
+
+      // ---------------- EXTRACT METADATA ----------------
+      const metadata = extractCVData(extractedText);
+
+      // normalize experience
+      const expMatch = metadata.experience.match(/\d+/);
+      metadata.experience_years = expMatch ? Number(expMatch[0]) : 0;
+
+      // const structuredData = extractCVData(extractedText);
+      const structuredData = extractCVData(extractedText);
+
     }
+    catch (error) {
+      app.log.error(error);
 
-    const vector = createEmbedding(text);
-    const score = scoreCV(text);
-
-    const point = {
-      id: Date.now(),
-      vector,
-      payload: {
-        filename: file.filename,
-        text: text.slice(0, 2000),
-        score: score.score,
-        label: score.label,
-      },
-    };
-
-    await insertCV(point);
-
-    return reply.send({
-      message: "CV uploaded",
-      score,
-    });
+      return reply.code(500).send({
+        error: "Upload failed",
+        details: error.message,
+      });
+    }
   });
 }

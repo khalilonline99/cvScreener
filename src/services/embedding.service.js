@@ -1,9 +1,19 @@
-export function createEmbedding(text) {
-  const vec = new Array(384).fill(0);
+import { pipeline } from "@xenova/transformers";
 
-  for (let i = 0; i < text.length; i++) {
-    vec[i % 384] += text.charCodeAt(i) / 1000;
+let embedder;
+
+export async function getEmbedding(text) {
+  if (!embedder) {
+    embedder = await pipeline(
+      "feature-extraction",
+      "Xenova/all-MiniLM-L6-v2"
+    );
   }
 
-  return vec;
+  const output = await embedder(text, {
+    pooling: "mean",
+    normalize: true,
+  });
+
+  return Array.from(output.data);
 }

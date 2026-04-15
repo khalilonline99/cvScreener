@@ -42,6 +42,15 @@
             color: blue;
             display: none;
         }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #111;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 
@@ -49,49 +58,42 @@
     <h2>Upload Resume</h2>
     <div class="container">
         <input type="file" id="fileInput">
-        <button id="uploadBtn">Upload</button>
-        <div id="loading">Processing...</div>
-        <div id="output"></div>
+        <button onclick="uploadCV()">Upload</button>
+
+        <pre id="result"></pre>
     </div>
 
     <script>
-        document.getElementById("uploadBtn").addEventListener("click", async function (event) {
-            event.preventDefault();
+        async function uploadCV() {
             const fileInput = document.getElementById("fileInput");
-            const outputDiv = document.getElementById("output");
-            if (!fileInput.files.length) return alert("Please select a file!");
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Select a file first");
+                return;
+            }
 
             const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
-
-            outputDiv.innerHTML = "<p>⏳ Processing... Please wait.</p>";
+            formData.append("file", file);
 
             try {
-                const response = await fetch("http://localhost:5000/upload", {
+                console.log('working before hitting the post method');
+
+                const res = await fetch("http://localhost:5000/api/upload", {
                     method: "POST",
-                    body: formData
+                    body: formData,
                 });
 
-                if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
+                const data = await res.json();
+                // console.log(data);
 
-                const data = await response.json();
-                console.log("🟢 Response received:", data);
-                outputDiv.innerHTML = `<p><strong>Extracted Text:</strong></p>`;
+                document.getElementById("result").innerText =
+                    JSON.stringify(data.data);
 
-                data.extractedData.forEach((item) => {
-                    const para = document.createElement("p");
-                    para.innerHTML = `${item.text}`;
-                    outputDiv.appendChild(para);
-                });
-
-            } catch (error) {
-                console.error("🔴 Upload failed:", error);
-                outputDiv.innerHTML = `<p style="color:red;">Upload failed: ${error.message}</p>`;
+            } catch (err) {
+                console.error(err);
             }
-            finally {
-                document.getElementById("loading").style.display = "none";
-            }
-        });
+        }
     </script>
 </body>
 
