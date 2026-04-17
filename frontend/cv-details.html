@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CV Details</title>
+</head>
+
+<body>
+
+    <h2>CV Details</h2>
+
+    <div id="details">Loading...</div>
+
+    <script>
+        async function loadDetails() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get("id");
+
+            const res = await fetch(`http://localhost:5000/cvs/${id}`);
+            const data = await res.json();
+
+            const div = document.getElementById("details");
+
+            div.innerHTML = `
+    <h3>${data.name}</h3>
+    <p><b>Email:</b> ${data.email}</p>
+    <p><b>Phone:</b> ${data.phone}</p>
+
+    <h4>Skills</h4>
+    <ul>
+      ${data.skills.map(s => `<li>${s}</li>`).join("")}
+    </ul>
+
+    <h4>Experience</h4>
+    <ul>
+      ${data.experience.map(e => `
+        <li>${e.role} at ${e.company} (${e.years} yrs)</li>
+      `).join("")}
+    </ul>
+
+    <h4>Education</h4>
+    <ul>
+      ${data.education.map(e => `
+        <li>${e.degree} - ${e.institution}</li>
+      `).join("")}
+    </ul>
+  `;
+        }
+
+        loadDetails();
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CV List</title>
+</head>
+
+<body>
+
+    <h2>CV List</h2>
+
+    <div id="list"></div>
+
+    <script>
+        async function loadCVs() {
+            // const res = await fetch("http://localhost:5000/cvs");
+            const res = await fetch("http://localhost:5000/api/cvs?limit=10&offset=0");
+            const data = await res.json();
+            console.log(data);
+            
+            const listDiv = document.getElementById("list");
+
+            listDiv.innerHTML = data.map(cv => `
+                <div style="margin:10px; padding:10px; border:1px solid #ccc;">
+                <b>${cv.name}</b> - ${cv.email}
+                <button onclick="viewCV(${cv.id})">View</button>
+                </div>
+                `).join("");
+                    }
+
+        function viewCV(id) {
+            window.location.href = `cv-details.html?id=${id}`;
+        }
+
+        loadCVs();
+    </script>
+
+</body>
+
+</html>
