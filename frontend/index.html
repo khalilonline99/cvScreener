@@ -1,100 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Screener</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-        }
-
-        input,
-        button {
-            margin-top: 10px;
-            padding: 10px;
-            width: 100%;
-        }
-
-        #output {
-            margin-top: 20px;
-            text-align: left;
-        }
-
-        .highlight {
-            background-color: yellow;
-            font-weight: bold;
-        }
-
-        #loading {
-            font-size: 16px;
-            color: blue;
-            display: none;
-        }
-
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background: #111;
-            color: #0f0;
-            padding: 10px;
-            border-radius: 8px;
-        }
-    </style>
+  <title>CV Screener</title>
 </head>
 
-<body>
-    <h2>Upload Resume</h2>
-    <div class="container">
-        <input type="file" id="fileInput">
-        <button onclick="uploadCV()">Upload</button>
+<body style="font-family: Arial; text-align: center; padding: 80px;">
 
-        <pre id="result"></pre>
-    </div>
+  <h1>🚀 AI CV Screener</h1>
 
-    <script>
-        async function uploadCV() {
-            const fileInput = document.getElementById("fileInput");
-            const file = fileInput.files[0];
+  <p>Upload CVs, analyze candidates, and manage hiring faster.</p>
 
-            if (!file) {
-                alert("Select a file first");
-                return;
-            }
+  <br>
 
-            const formData = new FormData();
-            formData.append("file", file);
+  <button onclick="goToApp()" style="padding: 12px 20px; font-size: 16px;">
+    Get Started
+  </button>
 
-            try {
-                console.log('working before hitting the post method');
+  <script>
+    function goToApp() {
+      window.location.href = "upload.html";
+    }
+  </script>
 
-                const res = await fetch("http://localhost:5000/api/upload", {
-                    method: "POST",
-                    body: formData,
-                });
-
-                const data = await res.json();
-                // console.log(data);
-
-                document.getElementById("result").innerText =
-                    JSON.stringify(data.data);
-
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    </script>
 </body>
-
 </html>

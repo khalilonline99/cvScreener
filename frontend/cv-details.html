@@ -2,53 +2,63 @@
 <html>
 
 <head>
-    <title>CV Details</title>
+  <title>CV Details</title>
 </head>
 
 <body>
 
-    <h2>CV Details</h2>
+  <button onclick="goBack()">⬅ Back</button>
+  <button onclick="goToUploadPage()">Upload CV</button>
+  <h2>CV Details</h2>
 
-    <div id="details">Loading...</div>
+  <div id="details">Loading...</div>
 
-    <script>
-        async function loadDetails() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get("id");
+  <script>
+    function goToUploadPage() {
+      window.location.href = "upload.html";
+    }
 
-            const res = await fetch(`http://localhost:5000/cvs/${id}`);
-            const data = await res.json();
+    function goBack() {
+      window.history.back();
+    }
 
-            const div = document.getElementById("details");
+    async function loadDetails() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
 
-            div.innerHTML = `
-    <h3>${data.name}</h3>
-    <p><b>Email:</b> ${data.email}</p>
-    <p><b>Phone:</b> ${data.phone}</p>
+      const res = await fetch(`http://localhost:5000/api/cvs/${id}`);
+      const data = await res.json();
 
-    <h4>Skills</h4>
-    <ul>
-      ${data.skills.map(s => `<li>${s}</li>`).join("")}
-    </ul>
+      const div = document.getElementById("details");
 
-    <h4>Experience</h4>
-    <ul>
-      ${data.experience.map(e => `
-        <li>${e.role} at ${e.company} (${e.years} yrs)</li>
-      `).join("")}
-    </ul>
+      div.innerHTML = `
+                <h3>${data.name}</h3>
+                <p><b>Email:</b> ${data.email}</p>
+                <p><b>Phone:</b> ${data.phone}</p>
 
-    <h4>Education</h4>
-    <ul>
-      ${data.education.map(e => `
-        <li>${e.degree} - ${e.institution}</li>
-      `).join("")}
-    </ul>
-  `;
-        }
+                <h4>Skills</h4>
+                <ul>
+                  ${(data.skills || []).map(s => `<li>${s}</li>`).join("")}
+                </ul>
 
-        loadDetails();
-    </script>
+                <h4>Experience</h4>
+                <ul>
+                  ${(data.experience || []).map(e => `
+                    <li>${e.role} at ${e.company} (${e.years} yrs)</li>
+                  `).join("")}
+                </ul>
+
+                <h4>Education</h4>
+                <ul>
+                  ${(data.education || []).map(e => `
+                    <li>${e.degree} - ${e.institution}</li>
+                  `).join("")}
+                </ul>
+              `;
+    }
+
+    loadDetails();
+  </script>
 
 </body>
 

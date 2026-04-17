@@ -6,18 +6,21 @@
 </head>
 
 <body>
-
+    <button onclick="goToUploadPage()">Upload CV</button>
     <h2>CV List</h2>
 
     <div id="list"></div>
 
     <script>
+        function goToUploadPage() {
+            window.location.href = "upload.html";
+        }
+
         async function loadCVs() {
             // const res = await fetch("http://localhost:5000/cvs");
             const res = await fetch("http://localhost:5000/api/cvs?limit=10&offset=0");
             const data = await res.json();
-            console.log(data);
-            
+
             const listDiv = document.getElementById("list");
 
             listDiv.innerHTML = data.map(cv => `
@@ -26,7 +29,7 @@
                 <button onclick="viewCV(${cv.id})">View</button>
                 </div>
                 `).join("");
-                    }
+        }
 
         function viewCV(id) {
             window.location.href = `cv-details.html?id=${id}`;
