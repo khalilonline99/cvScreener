@@ -1,11 +1,12 @@
 const jobs = {};
 
-export function createJob(fileName) {
+export function createJob(fileName, buffer) {
   const jobId = Date.now() + "-" + fileName;
 
   jobs[jobId] = {
     fileName,
     status: "processing",
+    buffer,
   };
 
   return jobId;

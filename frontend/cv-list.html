@@ -7,32 +7,87 @@
 
 <body>
     <button onclick="goToUploadPage()">Upload CV</button>
+
     <h2>CV List</h2>
 
     <div id="list"></div>
 
+    <div style="margin-top:20px;">
+        <button onclick="prevPage()">⬅ Prev</button>
+        <span id="pageInfo"></span>
+        <button onclick="nextPage()">Next ➡</button>
+    </div>
+
     <script>
+        let page = 0;
+        const limit = 10;
+
         function goToUploadPage() {
             window.location.href = "upload.html";
         }
 
         async function loadCVs() {
-            // const res = await fetch("http://localhost:5000/cvs");
-            const res = await fetch("http://localhost:5000/api/cvs?limit=10&offset=0");
-            const data = await res.json();
+            try {
+                // const res = await fetch("http://localhost:5000/cvs");
+                // const res = await fetch("http://localhost:5000/api/cvs?limit=10&offset=0");
+                const res = await fetch(`http://localhost:5000/api/cvs?limit=${limit}&offset=${page * limit}`);
+                const data = await res.json();
 
-            const listDiv = document.getElementById("list");
+                const container = document.getElementById("list");
+                container.innerHTML = "";
 
-            listDiv.innerHTML = data.map(cv => `
-                <div style="margin:10px; padding:10px; border:1px solid #ccc;">
-                <b>${cv.name}</b> - ${cv.email}
-                <button onclick="viewCV(${cv.id})">View</button>
-                </div>
-                `).join("");
+                if (!data || data.length === 0) {
+                    if (page > 0) page--;
+                    container.innerHTML = "<p>No CVs found</p>";
+                    return;
+                }
+
+                data.forEach(cv => {
+                    const div = document.createElement("div");
+
+                    div.innerHTML = `
+                <p>
+                    <b>${cv.name || "No Name"}</b> (${cv.email || "No Email"})
+                    <button onclick="viewCV('${cv.id}')">View</button>
+                </p>
+                <hr/>
+            `;
+                    container.appendChild(div);
+                });
+
+                document.getElementById("pageInfo").innerText = `Page ${page + 1}`;
+
+                document.querySelector("button[onclick='prevPage()']").disabled = page === 0;
+
+                const nextBtn = document.querySelector("button[onclick='nextPage()']");
+
+                if (data.length < limit) {
+                    nextBtn.disabled = true;
+                } else {
+                    nextBtn.disabled = false;
+                }
+
+            } catch {
+                console.error(err);
+                document.getElementById("list").innerHTML = "❌ Failed to fetch CVs";
+            }
+
         }
 
         function viewCV(id) {
             window.location.href = `cv-details.html?id=${id}`;
+        }
+
+        function nextPage() {
+            page++;
+            loadCVs();
+        }
+
+        function prevPage() {
+            if (page > 0) {
+                page--;
+                loadCVs();
+            }
         }
 
         loadCVs();

@@ -17,24 +17,23 @@ export default async function uploadRoute(app) {
 
     const parts = req.parts();
     const jobIds = [];
-
+    
     for await (const part of parts) {
       if (part.file) {
         console.log("📄 File received:", part.filename);
 
-        const jobId = createJob(part.filename);
-        jobIds.push(jobId);
-
-        // ✅ READ STREAM HERE (IMPORTANT)
         const chunks = [];
-
         for await (const chunk of part.file) {
           chunks.push(chunk);
         }
 
         const buffer = Buffer.concat(chunks);
 
-        // ✅ PASS BUFFER, NOT STREAM
+        const jobId = createJob(part.filename, buffer);
+        jobIds.push(jobId);
+
+        await Promise.resolve();
+
         processCV(buffer, part.filename, jobId);
       }
     }

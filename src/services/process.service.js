@@ -23,7 +23,7 @@ export async function processCV(buffer, fileName, jobId) {
                 {
                     id: Date.now(),
                     vector,
-                    payload: aiData,
+                    payload: {...aiData, createdAt: Date.now()},
                 },
             ],
         });

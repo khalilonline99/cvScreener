@@ -121,7 +121,10 @@
                 }
 
                 if (job.status === "failed") {
-                    el.innerText = `${job.fileName} → ❌ Failed`;
+                    el.innerHTML = `
+                        ${job.fileName} → ❌ Failed 
+                        <button onclick="retryJob('${jobId}')">Retry</button>
+                    `;
                     clearInterval(interval);
                     checkAllComplete();
                 }
@@ -182,6 +185,18 @@
 
         function goToList() {
             window.location.href = "cv-list.html";
+        }
+
+        async function retryJob(jobId) {
+            const el = document.getElementById(jobId);
+
+            el.innerText = "Retrying... ⏳";
+
+            await fetch(`http://localhost:5000/api/jobs/${jobId}/retry`, {
+                method: "POST"
+            });
+
+            trackJob(jobId); // start tracking again
         }
 
     </script>
